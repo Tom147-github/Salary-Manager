@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<html>
+<html lang="ja">
 <head>
     <title>Salary Manager</title>
 </head>
@@ -10,7 +10,7 @@
     <input type="number" name="day" id="day"><br>
     <label for="amount">Amount:</label><br>
     <input type="number" name="amount" id="amount"><br>
-    <button type="submit" value="Submit" style="margin: 20px 0px 15px 0px;">Submit</button>
+    <button type="submit" value="Submit" style="margin: 20px 0 15px 0;">Submit</button>
 </form>
 
 <h2>Total Amount : {{ $total_amount }}</h2>
@@ -23,18 +23,18 @@
     </tr>
     </thead>
     <tbody>
-    @for ($day = 1; $day <= $eom; $day++)
+    @foreach($amounts as $day)
         <tr>
-            <td>{{ $day }}</td>
-            <td>{{ $amounts[$day] }}</td>
+            <td>{{ $day->day }}</td>
+            <td>{{ $day->amount }}</td>
         </tr>
-    @endfor
+    @endforeach
     </tbody>
 </table>
 
 <form action="{{ route('reset.salary.table') }}" method="post">
     @csrf
-    <button type="submit" value="Reset" style="margin: 60px 0px 0px 0px;">Reset</button>
+    <button type="submit" value="Reset" style="margin: 60px 0 0 0;">Reset</button>
 </form>
 </body>
 </html>

@@ -5,15 +5,16 @@ namespace App\Http\Controllers;
 use App\Models\DayAndSalaryAmount;
 use Carbon\Carbon;
 use Illuminate\Http\Request;
+use Illuminate\View\View;
 
 class SalaryController extends Controller
 {
-    public function showWelcome()
+    public function showWelcome(Request $request): View
     {
         return view('welcome');
     }
 
-    public function updateResult(Request $request)
+    public function updateResult(Request $request): View
     {
         //入力された日付のデータがDBに存在しない場合は新規作成し、存在する場合は上書き
         DayAndSalaryAmount::query()->updateOrCreate(
@@ -29,39 +30,50 @@ class SalaryController extends Controller
             ->select(['amount', 'day'])
             ->orderBy('day')
             ->get();
-        $amounts = [];
+        $total_amount = DayAndSalaryAmount::query()
+            ->selectRaw("SUM(amount) AS total")
+            ->orderBy('day')
+            ->first()
+            ->total;
+
+        $amounts = collect();
         $today = Carbon::today();
-        for ($day = 1; $day <= $today->endOfMonth(); $day++) {
-            $amounts[$day] = $day_amounts->where('day', '=', $day)
-                ->pluck('amount')
-                ->first();
-        }
+        $eom = $today->endOfMonth()->day;
 
-        //Tableに表示されている全ての金額を合計し、変数に格納
-        $total_amount = 0;
-        foreach ($amounts as $amount) {
-            $total_amount += $amount;
-        }
+        foreach (range(1, $eom) as $day) {
+            $filtered = $day_amounts->filter(function ($value, $key) use ($day) {
+                return $value->day === $day;
+            })->first();
 
-        $eom = Carbon::today();
+            $salary = $filtered ?? new DayAndSalaryAmount([
+                    "day" => $day,
+                    "amount" => 0
+                ]);
+            $amounts->add($salary);
+        }
         return view('result', compact('amounts', 'total_amount', "eom"));
     }
 
-    public function resetSalaryTable()
+    public function resetSalaryTable(Request $request): View
     {
         //DBリセット
         DayAndSalaryAmount::query()->delete();
 
         //Tableリセット
-        $amounts = [];
+        $amounts = collect();
         $today = Carbon::today();
-        for ($day = 1; $day <= $today->endOfMonth(); $day++) {
-            $amounts[$day] = null;
+        $eom = $today->endOfMonth()->day;
+
+        foreach (range(1, $eom) as $day) {
+            $salary = new DayAndSalaryAmount([
+                "day" => $day,
+                "amount" => 0
+            ]);
+            $amounts->add($salary);
         }
 
         //合計金額リセット
         $total_amount = 0;
-        $eom = Carbon::today();
         return view('result', compact('amounts', 'total_amount', "eom"));
     }
 }
